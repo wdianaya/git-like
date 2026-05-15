@@ -9,7 +9,7 @@ bool directory_exists(const char *path);
 // Проверяет, существует ли обычный файл
 bool file_exists(const char *path);
 
-// Проверяет, существует ли файл или директория
+// Проверяет, существует ли объект по данному пути
 bool path_exists(const char *path);
 
 #endif

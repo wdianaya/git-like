@@ -4,24 +4,122 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-#include <openssl/sha.h> 
+#include "func_sha.h"
 
 #include "exist_dir.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
 
-void hash_func() {
-    const unsigned char str[] = "Original string";
-    unsigned char hash[20];
-    SHA1(str, sizeof(str) - 1, hash);
-    printf("%s\n", hash);
-    printf("%s\n", str);
-}
-
 // получить абсолютный путь переданного объекта
 void get_repo_path(char *name, char **path) {
     *path = realpath(name, NULL);
+}
+
+// обновляет index file
+void index_update(const char *status, const char *file_name, const char *hash) {
+    FILE *index_read = fopen(".mygit/index", "r");
+
+    // создаем временный файл 
+    FILE *index_temp = fopen(".mygit/index.tmp", "w");
+    
+    char line[1024];
+    bool updated = false;
+
+    if (index_read) {
+        while (fgets(line, sizeof(line), index_read)) {
+            line[strcspn(line, "\n")] = '\0';
+            char st[2];
+            char cur_file[512];
+            char cur_hash[41];
+
+            sscanf(line, "%s %s %s", st, cur_file, cur_hash);
+
+            if (strcmp(cur_file, file_name) == 0) {
+                fprintf(index_temp, "%s %s %s\n", st, file_name, hash);
+                updated = true;
+            } else {
+                fprintf(index_temp, "%s\n", line);
+
+            }
+
+        }
+    }
+    // если файла не было добавляем запись о нем
+    if (!updated) {
+        fprintf(index_temp, "%s %s %s\n", status, file_name, hash);
+    }
+
+    fclose(index_read);
+    fclose(index_temp);
+
+    remove(".mygit/index");
+    rename(".mygit/index.tmp", ".mygit/index");
+}
+
+// read the file content
+// store the blob object in database (.mygit/objects)
+char* create_blob(const char* file_path) {
+    FILE *f = fopen(file_path, "rb");
+    if (!f) {
+        printf("Cannot open file %s\n", file_path);
+        return NULL;
+    }
+
+    // получаем размер файла в байтах
+    fseek(f, 0, SEEK_END);
+    long file_size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    // выделяем память для чтения содержимого файла
+    unsigned char *buffer = malloc(file_size);
+    if (!buffer) {
+        printf("mem error :(");
+        fclose(f);
+        return NULL;
+    }
+
+    size_t bytes_read = fread(buffer, sizeof(char), file_size, f);
+    fclose(f);
+
+    // if (bytes_read != file_size) {
+    //     printf("read error :(\n");
+    //     free(buffer);
+    //     return NULL;
+    // }
+
+    char *hash_hex = malloc(41);
+    compute_sha1(buffer, bytes_read, hash_hex);
+
+    char dir_path[256];
+    snprintf(dir_path, sizeof(dir_path), ".mygit/objects/%.2s", hash_hex);
+
+    // проверка на существование данной директории
+    if (!directory_exists(dir_path)) { 
+        mkdir(dir_path, 0755);
+    }
+
+    char obj_path[512];
+    snprintf(obj_path, sizeof(obj_path), ".mygit/objects/%.2s/%s", hash_hex, hash_hex + 2);
+    if (file_exists(obj_path)) {
+        free(buffer);
+        return hash_hex;
+    }
+
+    FILE *obj_file = fopen(obj_path, "wb");
+    if (!obj_file) {
+        printf("cannot create object file :(\n");
+        free(buffer);
+        free(hash_hex);
+        return NULL;
+    }
+    
+    fwrite(buffer, sizeof(char), file_size, obj_file);
+
+    fclose(obj_file);
+    free(buffer);
+    
+    return hash_hex; 
 }
 
 // инициализация репозитория
@@ -58,19 +156,24 @@ void init_repository() {
     printf("\n");
 }
 
-// read the file content
+
 // create BLOB object from the content
-// store the blob object in database (.mygit/objects)
 // update index to include the file
-void add_file(char *path) {
-    if (!path_exists(path)) {
-        printf("Path %s not found", path);
+void add_file(char *file_name) {
+    if (!file_exists(file_name)) {
+        printf("File %s not found", file_name);
         return;
     }
 
-    FILE* content = fopen(path, "rb");
+    char *hash = create_blob(file_name);
+    if (!hash) {
+        printf("failed to add file :(\n");
+    }
+    index_update("A", file_name, hash);
+    printf("Adding file: %s\n", file_name);
 
 
+    free(hash);
 }
 
 // main func for add command
@@ -85,12 +188,12 @@ void add_command(char **args, int n) {
         strcat(name_arg, args[i]);
 
         if (!path_exists(name_arg)) {
-            printf("Path %s not found", name_arg);
+            printf("Path %s not found\n", name_arg);
             return;
         }
 
         if (file_exists(name_arg)) {
-            // add_file(name_arg);
+            add_file(name_arg);
         }
         else if (directory_exists(name_arg)) {
             // add_directory();
@@ -117,6 +220,7 @@ void show_help() {
     printf("\nAvailable commands:\n");
     printf("  init [path]    Initialize a new repository\n");
     printf("  help           Show this help message\n");
+    printf("  add            Add file contents to the index\n");
     printf("  exit           Exit the program\n\n");
 }
 
@@ -152,10 +256,6 @@ int main() {
 
         else if (command != NULL && strcmp(command, "add") == 0) {
             add_command(args, count_args);
-            // for (int i =0; i < count_args; ++i) {
-            //     printf("%s ", args[i]);
-            // }
-            // printf("\n");
 
         }
 

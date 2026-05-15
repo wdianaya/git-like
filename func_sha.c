@@ -1,4 +1,5 @@
 #include "func_sha.h"
+#include <stdio.h>
 #include <openssl/sha.h>
 #define LEN_SHA 20
 
