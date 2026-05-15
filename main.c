@@ -82,11 +82,11 @@ char* create_blob(const char* file_path) {
     size_t bytes_read = fread(buffer, sizeof(char), file_size, f);
     fclose(f);
 
-    // if (bytes_read != file_size) {
-    //     printf("read error :(\n");
-    //     free(buffer);
-    //     return NULL;
-    // }
+    if (bytes_read != file_size) {
+        printf("read error :(\n");
+        free(buffer);
+        return NULL;
+    }
 
     char *hash_hex = malloc(41);
     compute_sha1(buffer, bytes_read, hash_hex);
