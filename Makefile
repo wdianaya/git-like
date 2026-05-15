@@ -3,7 +3,7 @@ all: app
 clean:
 	rm -rf app main.o exist_dir.o func_sha.o
 
-app: main.o exist_dir.o           
+app: main.o exist_dir.o func_sha.o       
 	gcc -o app func_sha.o main.o exist_dir.o -lssl -lcrypto 
 # -lssl -lcrypto флаги для подключения openssl/sha.h
 
