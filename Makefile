@@ -1,17 +1,31 @@
-all: app
+CC = gcc
+LIBS = -lssl -lcrypto
+
+TARGET = app
+
+OBJS = main.o repository.o utils.o object.o index.o
+
+all: $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CC) -o $(TARGET) $(OBJS) $(LIBS)
+
+main.o: main.c
+	$(CC) -c main.c -o main.o
+
+repository.o: repository.c
+	$(CC) -c repository.c -o repository.o
+
+utils.o: utils.c
+	$(CC) -c utils.c -o utils.o
+
+object.o: object.c
+	$(CC) -c object.c -o object.o
+
+index.o: index.c
+	$(CC) -c index.c -o index.o
 
 clean:
-	rm -rf app main.o exist_dir.o func_sha.o
+	rm -f $(TARGET) $(OBJS)
 
-app: main.o exist_dir.o func_sha.o       
-	gcc -o app func_sha.o main.o exist_dir.o -lssl -lcrypto 
-# -lssl -lcrypto флаги для подключения openssl/sha.h
-
-main.o: main.c                   
-	gcc -c main.c -o main.o
-
-exist_dir.o: exist_dir.c
-	gcc -c exist_dir.c -o exist_dir.o 
-
-func_sha.o: func_sha.c
-	gcc -c func_sha.c -o func_sha.o
+.PHONY: all clean
