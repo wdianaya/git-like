@@ -4,10 +4,20 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
+#include <openssl/sha.h> 
+
 #include "exist_dir.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
+
+void hash_func() {
+    const unsigned char str[] = "Original string";
+    unsigned char hash[20];
+    SHA1(str, sizeof(str) - 1, hash);
+    printf("%s\n", hash);
+    printf("%s\n", str);
+}
 
 // получить абсолютный путь переданного объекта
 void get_repo_path(char *name, char **path) {
@@ -46,6 +56,49 @@ void init_repository() {
     }
 
     printf("\n");
+}
+
+// read the file content
+// create BLOB object from the content
+// store the blob object in database (.mygit/objects)
+// update index to include the file
+void add_file(char *path) {
+    if (!path_exists(path)) {
+        printf("Path %s not found", path);
+        return;
+    }
+
+    FILE* content = fopen(path, "rb");
+
+
+}
+
+// main func for add command
+void add_command(char **args, int n) {
+    char* path;
+    get_repo_path(".", &path);
+    
+    for (int i =0; i < n; ++i) {
+        char name_arg[MAX_INPUT];
+        strcpy(name_arg, path);
+        strcat(name_arg, "/");
+        strcat(name_arg, args[i]);
+
+        if (!path_exists(name_arg)) {
+            printf("Path %s not found", name_arg);
+            return;
+        }
+
+        if (file_exists(name_arg)) {
+            // add_file(name_arg);
+        }
+        else if (directory_exists(name_arg)) {
+            // add_directory();
+        }
+
+    }
+
+    free(path);
 }
 
 void parse_argument(char *line, char **func, char **args, int *arg_count) {
@@ -95,6 +148,15 @@ int main() {
         
         else if (command != NULL && strcmp(command, "exit") == 0) {
             break;
+        }
+
+        else if (command != NULL && strcmp(command, "add") == 0) {
+            add_command(args, count_args);
+            // for (int i =0; i < count_args; ++i) {
+            //     printf("%s ", args[i]);
+            // }
+            // printf("\n");
+
         }
 
         else if (command != NULL && strcmp(command, "init") == 0) {
