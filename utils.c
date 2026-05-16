@@ -1,6 +1,8 @@
-#include "exist_dir.h"
+#include "utils.h" 
 #include <stdbool.h>
 #include <sys/stat.h>
+#include <stdio.h>
+#include <stdlib.h> 
 
 bool directory_exists(const char *path) {
     struct stat st={0};
@@ -24,4 +26,8 @@ bool path_exists(const char *path) {
         return true;
     }
     return false;
+}
+
+void get_repo_path(char *name, char **path) {
+    *path = realpath(name, NULL);
 }
