@@ -5,6 +5,14 @@
 
 #include "utils.h"
 
+#ifdef _WIN32
+    #include <direct.h>
+    #define MKDIR(path) _mkdir(path)
+#else
+    #include <sys/stat.h>
+    #define MKDIR(path) mkdir(path, 0755)
+#endif
+
 #define LEN_SHA 20
 
 void compute_sha1(const unsigned char *data, size_t len, char hash_hex[41]) {
@@ -34,7 +42,7 @@ char* create_blob(const char* file_path) {
     fseek(f, 0, SEEK_SET);
 
     // выделяем память для чтения содержимого файла
-    unsigned char *buffer = malloc(file_size);
+    unsigned char *buffer = (char*)malloc(file_size);
     if (!buffer) {
         printf("mem error :(");
         fclose(f);
@@ -58,7 +66,7 @@ char* create_blob(const char* file_path) {
 
     // проверка на существование данной директории
     if (!directory_exists(dir_path)) { 
-        mkdir(dir_path, 0755);
+        MKDIR(dir_path);
     }
 
     char obj_path[512];
