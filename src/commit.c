@@ -133,10 +133,12 @@ void commit_command(char **args, int count) {
         return;
     }
 
-    char message[MAX_INP];
+    char message[MAX_INP] = "";
     for (int i =0; i < count;++i) {
-        strcat(message, args[i]);
-        strcat(message, " ");
+        strncat(message, args[i], MAX_INP - strlen(message) - 1);
+        if (i != count - 1) {
+            strncat(message, " ", MAX_INP - strlen(message) - 1);
+        }
     }
 
     FILE *index = fopen(".mygit/index", "r");
@@ -211,4 +213,40 @@ void commit_command(char **args, int count) {
     if (parent_hash) {
         free(parent_hash);
     }
+}
+
+void create_initial_commit() {
+    time_t now = time(NULL);
+
+    struct tm *tm_info = localtime(&now);
+
+    char date[64];
+
+    strftime(date,
+             sizeof(date),
+             "%Y-%m-%d %H:%M:%S",
+             tm_info);
+
+    char commit_content[1024];
+
+    snprintf(commit_content,
+             sizeof(commit_content),
+             "parent: NULL\n"
+             "date: %s\n"
+             "message: initial commit\n",
+             date);
+
+    char commit_hash[41];
+
+    compute_sha1(
+        (unsigned char*)commit_content,
+        strlen(commit_content),
+        commit_hash
+    );
+
+    save_commit_object(commit_hash, commit_content);
+    
+    update_branch_head(commit_hash);
+
+    printf("Initial commit: %s\n", commit_hash);
 }
