@@ -1,7 +1,14 @@
 #include <stdio.h>
-#include <stdlib.h>      
-#include <sys/stat.h> 
-   
+#include <stdlib.h>
+
+#ifdef _WIN32
+    #include <direct.h>
+    #define MKDIR(path) _mkdir(path)
+#else
+    #include <sys/stat.h>
+    #define MKDIR(path) mkdir(path, 0755)
+#endif
+
 #include "utils.h"
 
 // инициализация репозитория
@@ -11,10 +18,10 @@ void init_repository() {
         return;
     }
 
-    mkdir(".mygit", 0755);
-    mkdir(".mygit/objects", 0755);
-    mkdir(".mygit/refs", 0755);
-    mkdir(".mygit/refs/heads", 0755);
+    MKDIR(".mygit");
+    MKDIR(".mygit/objects");
+    MKDIR(".mygit/refs");
+    MKDIR(".mygit/refs/heads");
 
     FILE* head = fopen(".mygit/HEAD", "w");
     fprintf(head, "ref: refs/heads/master\n");
@@ -27,7 +34,9 @@ void init_repository() {
 
     char* path;
     get_repo_path(dirname, &path);
+
     printf("Initialized empty Git repository in path:");
+
     if (path == NULL) {
         printf("[cannot find]");
     } else {

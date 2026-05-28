@@ -3,7 +3,7 @@ LIBS = -lssl -lcrypto
 
 TARGET = app
 
-OBJS = main.o repository.o utils.o object.o index.o
+OBJS = main.o repository.o utils.o object.o index.o commit.o
 
 all: $(TARGET)
 
@@ -24,6 +24,9 @@ object.o: object.c
 
 index.o: index.c
 	$(CC) -c index.c -o index.o
+
+commit.o: commit.c
+	$(CC) -c commit.c -o commit.o
 
 clean:
 	rm -f $(TARGET) $(OBJS)

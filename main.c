@@ -7,13 +7,13 @@
 #include "utils.h"
 #include "object.h"
 #include "index.h"
+#include "commit.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
 
 void parse_argument(char *line, char **func, char **args, int *arg_count);
 void show_help();
-
 
 int main() {
 
@@ -38,29 +38,42 @@ int main() {
         strcpy(buff_copy, buff);
         parse_argument(buff_copy, &command, args, &count_args);
 
-        if (command != NULL && strcmp(command, "help") == 0) {
+        if ( command == NULL ) {
+            printf("Unknown command\n");
+        }
+
+        else if (strcmp(command, "help") == 0) {
             show_help();
         }
         
-        else if (command != NULL && strcmp(command, "add") == 0) {
+        else if (strcmp(command, "add") == 0) {
             add_command(args, count_args);
         }
 
-        else if (command != NULL && strcmp(command, "init") == 0) {
+        else if (strcmp(command, "init") == 0) {
             init_repository();
         }
 
-        else if (command != NULL && strcmp(command, "remove") == 0) {
+        else if (strcmp(command, "remove") == 0) {
             remove_command(args, count_args);
         }
 
-        else if (command != NULL && strcmp(command, "exit") == 0) {
+        else if (strcmp(command, "exit") == 0) {
             break;
+        }
+
+        else if (strcmp(command, "commit") == 0) {
+            if (count_args == 0) {
+                printf("commit message required\n");
+            } else {
+                commit_command(args, count_args);
+            }
         }
 
         else {
             printf("Unknown command\n");
         }
+        // free(args);
     }
 
     return 0;
