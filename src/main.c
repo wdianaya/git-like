@@ -35,7 +35,7 @@ int main() {
         int count_args = 0;
 
         char buff_copy[MAX_INPUT];
-        strcpy(buff_copy, buff);
+        snprintf(buff_copy, sizeof(buff_copy), "%s", buff);
         parse_argument(buff_copy, &command, args, &count_args);
 
         if ( command == NULL ) {

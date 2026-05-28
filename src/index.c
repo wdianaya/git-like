@@ -81,7 +81,8 @@ void add_command(char **args, int n) {
     
     for (int i =0; i < n; ++i) {
         char name_arg[MAX_INPUT];
-        strcpy(name_arg, path);
+        snprintf(name_arg, sizeof(name_arg), "%s", path);
+        // strcpy(name_arg, path);
         strcat(name_arg, "/");
         strcat(name_arg, args[i]);
 
@@ -124,7 +125,8 @@ void remove_command(char **args, int count) {
     
     for (int i =0; i < count; ++i) {
         char name_arg[MAX_INPUT];
-        strcpy(name_arg, path);
+        snprintf(name_arg, sizeof(name_arg), "%s", path);
+        // strcpy(name_arg, path);
         strcat(name_arg, "/");
         strcat(name_arg, args[i]);
 
