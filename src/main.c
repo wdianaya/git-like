@@ -8,6 +8,7 @@
 #include "object.h"
 #include "index.h"
 #include "commit.h"
+#include "log.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
@@ -16,11 +17,8 @@ void parse_argument(char *line, char **func, char **args, int *arg_count);
 void show_help();
 
 int main() {
-
     char buff[MAX_INPUT];
-
     while (1) {
-
         printf("mygit> ");
 
         if (fgets(buff, sizeof(buff), stdin) == NULL) {
@@ -30,7 +28,7 @@ int main() {
         buff[strcspn(buff, "\n")] = '\0';
         if (buff[0] == '\0') continue;
 
-        char* command;
+        char* command = NULL;
         char* args[MAX_ARGS];
         int count_args = 0;
 
@@ -38,7 +36,7 @@ int main() {
         snprintf(buff_copy, sizeof(buff_copy), "%s", buff);
         parse_argument(buff_copy, &command, args, &count_args);
 
-        if ( command == NULL ) {
+        if (command == NULL) {
             fprintf(stderr, "Unknown command\n");
         }
 
@@ -70,12 +68,14 @@ int main() {
             }
         }
 
+        else if (strcmp(command, "log") == 0) {
+            log_command(args, count_args);
+        }
+
         else {
             fprintf(stderr, "Unknown command\n");
         }
-        // free(args);
     }
-
     return 0;
 }
 
@@ -93,9 +93,10 @@ void parse_argument(char *line, char **func, char **args, int *arg_count) {
 
 void show_help() {
     printf("\nAvailable commands:\n");
-    printf("  init [path]    Initialize a new repository\n");
+    printf("  init           Initialize a new repository in current directory\n");
     printf("  help           Show this help message\n");
     printf("  add            Add file contents to the index\n");
     printf("  remove         Add file contents to the index\n");
+    printf("  commit         Record changes to the repository\n");
     printf("  exit           Exit the program\n\n");
 }

@@ -4,7 +4,7 @@ LIBS = -lssl -lcrypto
 
 TARGET = app
 
-OBJS = build/main.o build/repository.o build/utils.o build/object.o build/index.o build/commit.o build/sha1.o
+OBJS = build/main.o build/repository.o build/utils.o build/object.o build/index.o build/commit.o build/sha1.o build/log.o
 
 all: $(TARGET)
 
@@ -38,6 +38,10 @@ build/commit.o: src/commit.c
 build/sha1.o: src/sha1.c
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/sha1.c -o build/sha1.o
+
+build/log.o: src/log.c
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/log.c -o build/log.o
 
 clean:
 	rm -rf build $(TARGET)

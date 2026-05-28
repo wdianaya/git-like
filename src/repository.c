@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils.h"
+#include "commit.h"
+
 #ifdef _WIN32
     #include <direct.h>
     #define MKDIR(path) _mkdir(path)
@@ -9,7 +12,6 @@
     #define MKDIR(path) mkdir(path, 0755)
 #endif
 
-#include "utils.h"
 
 // инициализация репозитория
 void init_repository() {
@@ -43,6 +45,16 @@ void init_repository() {
         printf("[%s]", path);
         free(path);
     }
-
     printf("\n");
+
+    create_initial_commit();
+
+    // // first commit
+    // char *args[] = {
+    //     "first",
+    //     "commit"
+    // };
+
+    // commit_command(args, 2);
+
 }
