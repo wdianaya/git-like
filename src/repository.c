@@ -14,7 +14,7 @@
 // инициализация репозитория
 void init_repository() {
     if (directory_exists(".mygit")) {
-        printf("Repository already exist\n");
+        fprintf(stderr, "Repository already exist\n");
         return;
     }
 
@@ -35,10 +35,10 @@ void init_repository() {
     char* path;
     get_repo_path(dirname, &path);
 
-    printf("Initialized empty Git repository in path:");
+    fprintf(stderr, "Initialized empty Git repository in path:");
 
     if (path == NULL) {
-        printf("[cannot find]");
+        fprintf(stderr, "[cannot find]");
     } else {
         printf("[%s]", path);
         free(path);

@@ -4,6 +4,7 @@
 #include <openssl/sha.h>
 
 #include "utils.h"
+#include "sha1.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -13,26 +14,12 @@
     #define MKDIR(path) mkdir(path, 0755)
 #endif
 
-#define LEN_SHA 20
-
-void compute_sha1(const unsigned char *data, size_t len, char hash_hex[41]) {
-    unsigned char hash[LEN_SHA];
-
-    SHA1(data, len, hash);
-
-    // преобразуем бинарный хеш в hex строку
-    for (int i = 0; i < LEN_SHA; i++) {
-        sprintf(hash_hex + (i * 2), "%02x", hash[i]);
-    }
-    hash_hex[40] = '\0';
-}
-
 // read the file content
 // store the blob object in database (.mygit/objects)
 char* create_blob(const char* file_path) {
     FILE *f = fopen(file_path, "rb");
     if (!f) {
-        printf("Cannot open file %s\n", file_path);
+        fprintf(stderr, "Cannot open file %s\n", file_path);
         return NULL;
     }
 
@@ -44,7 +31,7 @@ char* create_blob(const char* file_path) {
     // выделяем память для чтения содержимого файла
     unsigned char *buffer = (char*)malloc(file_size);
     if (!buffer) {
-        printf("mem error :(");
+        fprintf(stderr, "mem error :(");
         fclose(f);
         return NULL;
     }
@@ -53,7 +40,7 @@ char* create_blob(const char* file_path) {
     fclose(f);
 
     if (bytes_read != file_size) {
-        printf("read error :(\n");
+        fprintf(stderr, "read error :(\n");
         free(buffer);
         return NULL;
     }
@@ -78,7 +65,7 @@ char* create_blob(const char* file_path) {
 
     FILE *obj_file = fopen(obj_path, "wb");
     if (!obj_file) {
-        printf("cannot create object file :(\n");
+        fprintf(stderr, "cannot create object file :(\n");
         free(buffer);
         free(hash_hex);
         return NULL;
