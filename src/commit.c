@@ -7,6 +7,7 @@
 #include "commit.h"
 #include "utils.h"
 #include "object.h"
+#include "sha1.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -76,7 +77,7 @@ void save_commit_object(const char *hash, const char *content) {
     FILE *obj = fopen(obj_path, "w");
 
     if (!obj) {
-        printf("cannot create commit object\n");
+        fprintf(stderr, "cannot create commit object\n");
         return;
     }
 
@@ -128,7 +129,7 @@ void clear_index() {
 
 void commit_command(char **args, int count) {
     if (!directory_exists(".mygit")) {
-        printf("repository not initialized\n");
+        fprintf(stderr, "repository not initialized\n");
         return;
     }
 
@@ -141,7 +142,7 @@ void commit_command(char **args, int count) {
     FILE *index = fopen(".mygit/index", "r");
 
     if (!index) {
-        printf("cannot open index\n");
+        fprintf(stderr, "cannot open index\n");
         return;
     }
 
@@ -159,7 +160,7 @@ void commit_command(char **args, int count) {
     fclose(index);
 
     if (is_empty) {
-        printf("nothing to commit\n");
+        fprintf(stderr, "nothing to commit\n");
         return;
     }
 

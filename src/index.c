@@ -54,13 +54,13 @@ void index_update(const char *status, const char *file_name, const char *hash) {
 // update index to include the file
 void add_file(char *file_name) {
     if (!file_exists(file_name)) {
-        printf("File %s not found", file_name);
+        fprintf(stderr, "File %s not found", file_name);
         return;
     }
 
     char *hash = create_blob(file_name);
     if (!hash) {
-        printf("failed to add file :(\n");
+        fprintf(stderr, "failed to add file :(\n");
     }
     index_update("A", file_name, hash);
     printf("Adding file: %s\n", file_name);
@@ -72,7 +72,7 @@ void add_file(char *file_name) {
 // main func for add command
 void add_command(char **args, int n) {
     if (!directory_exists(".mygit")) {
-        printf("repo was not found\n");
+        fprintf(stderr, "repo was not found\n");
         return;
     }
 
@@ -86,7 +86,7 @@ void add_command(char **args, int n) {
         strcat(name_arg, args[i]);
 
         if (!path_exists(name_arg)) {
-            printf("Path %s not found\n", name_arg);
+            fprintf(stderr, "Path %s not found\n", name_arg);
             return;
         }
 
@@ -104,7 +104,7 @@ void add_command(char **args, int n) {
 // пометить файл удаленным
 void remove_file(char *file_name) {
     if (!file_exists(file_name)) {
-        printf("File %s not found", file_name);
+        fprintf(stderr, "File %s not found", file_name);
         return;
     }
     
@@ -115,7 +115,7 @@ void remove_file(char *file_name) {
 // main func for remove
 void remove_command(char **args, int count) {
     if (!directory_exists(".mygit")) {
-        printf("repo was not found\n");
+        fprintf(stderr, "repo was not found\n");
         return;
     }
 
@@ -129,7 +129,7 @@ void remove_command(char **args, int count) {
         strcat(name_arg, args[i]);
 
         if (!path_exists(name_arg)) {
-            printf("Path %s not found\n", name_arg);
+            fprintf(stderr, "Path %s not found\n", name_arg);
             return;
         }
 
