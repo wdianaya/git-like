@@ -31,3 +31,7 @@ bool path_exists(const char *path) {
 void get_repo_path(char *name, char **path) {
     *path = realpath(name, NULL);
 }
+
+void build_object_path(const char *hash, char *path) {
+    sprintf(path, ".mygit/objects/%.2s/%s", hash, hash + 2);
+}

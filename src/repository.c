@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "utils.h"
+#include "commit.h"
+
 #ifdef _WIN32
     #include <direct.h>
     #define MKDIR(path) _mkdir(path)
@@ -9,12 +12,11 @@
     #define MKDIR(path) mkdir(path, 0755)
 #endif
 
-#include "utils.h"
 
 // инициализация репозитория
 void init_repository() {
     if (directory_exists(".mygit")) {
-        printf("Repository already exist\n");
+        fprintf(stderr, "Repository already exist\n");
         return;
     }
 
@@ -35,14 +37,24 @@ void init_repository() {
     char* path;
     get_repo_path(dirname, &path);
 
-    printf("Initialized empty Git repository in path:");
+    fprintf(stderr, "Initialized empty Git repository in path:");
 
     if (path == NULL) {
-        printf("[cannot find]");
+        fprintf(stderr, "[cannot find]");
     } else {
         printf("[%s]", path);
         free(path);
     }
-
     printf("\n");
+
+    create_initial_commit();
+
+    // // first commit
+    // char *args[] = {
+    //     "first",
+    //     "commit"
+    // };
+
+    // commit_command(args, 2);
+
 }
