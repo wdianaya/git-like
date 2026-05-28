@@ -98,5 +98,6 @@ void show_help() {
     printf("  add            Add file contents to the index\n");
     printf("  remove         Add file contents to the index\n");
     printf("  commit         Record changes to the repository\n");
+    printf("  log [hash] [[--n] <number>]    Show commit logs"\n);
     printf("  exit           Exit the program\n\n");
 }
