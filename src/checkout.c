@@ -108,9 +108,7 @@ void checkout_command(char **args, int count) {
     if (strcmp(blob_hash,
                "0000000000000000000000000000000000000000") == 0) {
 
-        printf(
-            "file deleted in this commit\n"
-        );
+        printf("file deleted in this commit\n");
 
         return;
     }
