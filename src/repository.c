@@ -48,13 +48,4 @@ void init_repository() {
     printf("\n");
 
     create_initial_commit();
-
-    // // first commit
-    // char *args[] = {
-    //     "first",
-    //     "commit"
-    // };
-
-    // commit_command(args, 2);
-
 }

@@ -9,6 +9,9 @@
 #include "index.h"
 #include "commit.h"
 #include "log.h"
+#include "status.h"
+#include "diff.h"
+#include "checkout.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
@@ -72,6 +75,18 @@ int main() {
             log_command(args, count_args);
         }
 
+        else if (strcmp(command, "diff") == 0) {
+            diff_command(args, count_args);
+        }
+
+        else if (strcmp(command, "status") == 0) {
+            status_command();
+        }
+
+        else if (strcmp(command, "checkout") == 0) {
+            checkout_command(args, count_args);
+        }
+
         else {
             fprintf(stderr, "Unknown command\n");
         }
@@ -98,6 +113,9 @@ void show_help() {
     printf("  add            Add file contents to the index\n");
     printf("  remove         Add file contents to the index\n");
     printf("  commit         Record changes to the repository\n");
-    printf("  log [hash] [[--n] <number>]    Show commit logs"\n);
+    printf("  log [hash] [[--n] <number>]    Show commit logs\n");
+    printf("  diff           Show changes between commits\n");
+    printf("  status         Show the working tree status\n");
+    printf("  checkout [hash] [filename] Insert the contents of the specified file\n");
     printf("  exit           Exit the program\n\n");
 }
