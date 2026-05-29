@@ -9,6 +9,30 @@
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
 
+int file_in_index(const char *filename) {
+    FILE *index = fopen(".mygit/index", "r");
+    if (!index) {
+        return 0;
+    }
+
+    char line[1024];
+    char st[2];
+    char file[512];
+    char hash[41];
+
+    while (fgets(line, sizeof(line), index)) {
+        sscanf(line,"%1s %511s %40s", st, file, hash);
+
+        if (strcmp(file, filename) == 0) {
+            fclose(index);
+            return 1;
+        }
+    }
+
+    fclose(index);
+    return 0;
+}
+
 // обновляет index file
 void index_update(const char *status, const char *file_name, const char *hash) {
     FILE *index_read = fopen(".mygit/index", "r");
@@ -67,7 +91,13 @@ void add_file(char *real_path, char *repo_path) {
         return;
     }
 
-    index_update("A", repo_path, hash);
+    if (file_in_index(repo_path)) {
+        index_update("M", repo_path, hash);
+    }
+    else {
+        index_update("A", repo_path, hash);
+    }
+
     printf("Adding file: %s\n", repo_path);
 
     free(hash);
