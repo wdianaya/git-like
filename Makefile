@@ -45,7 +45,7 @@ build/log.o: src/log.c
 
 build/diff.o: src/diff.o
 	@mkdir -p build
-	$(CC) &(CFLAGS) -c src/diff.c -o build/diff.o
+	$(CC) $(CFLAGS) -c src/diff.c -o build/diff.o
 
 clean:
 	rm -rf build $(TARGET)
