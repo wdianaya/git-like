@@ -1,10 +1,10 @@
 CC = gcc
-CFLAGS = -I./include -Wall -Wextra 
+CFLAGS = -I./include 
 LIBS = -lssl -lcrypto
 
 TARGET = app
 
-OBJS = build/main.o build/repository.o build/utils.o build/object.o build/index.o build/commit.o build/sha1.o build/log.o build/diff.o
+OBJS = build/main.o build/repository.o build/utils.o build/object.o build/index.o build/commit.o build/sha1.o build/log.o build/diff.o build/status.o
 
 all: $(TARGET)
 
@@ -43,9 +43,13 @@ build/log.o: src/log.c
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/log.c -o build/log.o
 
-build/diff.o: src/diff.o
+build/diff.o: src/diff.c
 	@mkdir -p build
 	$(CC) $(CFLAGS) -c src/diff.c -o build/diff.o
+
+build/status.o: src/status.c
+	@mkdir -p build
+	$(CC) $(CFLAGS) -c src/status.c -o build/status.o
 
 clean:
 	rm -rf build $(TARGET)

@@ -9,6 +9,7 @@
 #include "index.h"
 #include "commit.h"
 #include "log.h"
+#include "status.h"
 #include "diff.h"
 
 #define MAX_INPUT 1024
@@ -75,6 +76,10 @@ int main() {
 
         else if (strcmp(command, "diff") == 0) {
             diff_command(args, count_args);
+        }
+
+        else if (strcmp(command, "status") == 0) {
+            status_command();
         }
 
         else {
