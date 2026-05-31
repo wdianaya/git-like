@@ -14,4 +14,6 @@ void update_current_branch(const char *hash);
 // очистить index
 void clear_index();
 
+char* get_last_commit_hash(const char *filename);
+
 #endif

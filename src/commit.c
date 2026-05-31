@@ -227,3 +227,53 @@ void create_initial_commit() {
 
     printf("Initial commit: %s\n", commit_hash);
 }
+
+char* get_last_commit_hash(const char *filename) {
+    char *current_commit = get_head_commit();
+    if (!current_commit) {
+        return NULL;
+    }
+
+    char commit_path[512];
+    build_object_path(current_commit, commit_path);
+    
+    FILE *f = fopen(commit_path, "r");
+    if (!f) {
+        free(current_commit);
+        return NULL;
+    }
+
+    char line[1024];
+    char *hash = NULL;
+    
+    while (fgets(line, sizeof(line), f)) {
+        char status[3];
+        char file[512];
+        char file_hash[41];
+        
+        // пропускаем метаданные
+        if (strncmp(line, "parent:", 7) == 0 ||
+            strncmp(line, "date:", 5) == 0 ||
+            strncmp(line, "message:", 8) == 0 ||
+            strcmp(line, "\n") == 0) {
+            continue;
+        }
+        
+        if (sscanf(line, "%2s %511s %40s", status, file, file_hash) == 3) {
+            if (strcmp(file, filename) == 0 && strcmp(status, "D") != 0) {
+                hash = strdup(file_hash);
+                break;
+            }
+        }
+    }
+    
+    fclose(f);
+    free(current_commit);
+    
+    if (hash && strcmp(hash, "0000000000000000000000000000000000000000") == 0) {
+        free(hash);
+        return NULL;
+    }
+    
+    return hash;
+}
