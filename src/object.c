@@ -50,12 +50,14 @@ char* create_blob(const char* file_path) {
     
     if (total_read != (size_t)file_size) {
         fprintf(stderr, "read error :(\n");
+        free(buffer);
         return NULL;
     }
 
     // Получаем итоговый хеш
     char *hash_hex = (char*)malloc(HASH_SIZE * sizeof(char));
     if (!hash_hex) {
+        free(buffer);
         fprintf(stderr, "mem error :(\n");
         return NULL;
     }
@@ -73,7 +75,6 @@ char* create_blob(const char* file_path) {
     build_object_path(hash_hex, obj_path);
     if (file_exists(obj_path)) {
         free(buffer);
-        fclose(f);
         return hash_hex;
     }
 
@@ -90,6 +91,7 @@ char* create_blob(const char* file_path) {
         fprintf(stderr, "Cannot reopen file %s\n", file_path);
         fclose(obj_file);
         free(hash_hex);
+        free(buffer);
         return NULL;
     }
     
