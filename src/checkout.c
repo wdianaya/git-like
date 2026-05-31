@@ -8,10 +8,7 @@
 int find_file_in_commit(const char *commit_hash, const char *filename, char *blob_hash) {
     char path[512];
 
-    sprintf(path,
-            ".mygit/objects/%.2s/%s",
-            commit_hash,
-            commit_hash + 2);
+    sprintf(path, ".mygit/objects/%.2s/%s", commit_hash, commit_hash + 2);
 
     FILE *f = fopen(path, "r");
 
@@ -22,18 +19,12 @@ int find_file_in_commit(const char *commit_hash, const char *filename, char *blo
     char line[1024];
 
     while (fgets(line, sizeof(line), f)) {
-
         char status[2];
         char file[512];
         char hash[41];
 
         // пытаемся прочитать file entry
-        if (sscanf(line,
-                   "%1s %511s %40s",
-                   status,
-                   file,
-                   hash) == 3) {
-
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) == 3) {
             if (strcmp(file, filename) == 0) {
                 strcpy(blob_hash, hash);
                 fclose(f);
@@ -43,17 +34,13 @@ int find_file_in_commit(const char *commit_hash, const char *filename, char *blo
     }
 
     fclose(f);
-
     return 0;
 }
 
 int restore_blob(const char *blob_hash, const char *filename) {
     char obj_path[512];
 
-    sprintf(obj_path,
-            ".mygit/objects/%.2s/%s",
-            blob_hash,
-            blob_hash + 2);
+    sprintf(obj_path, ".mygit/objects/%.2s/%s", blob_hash, blob_hash + 2);
 
     FILE *obj = fopen(obj_path, "rb");
 
@@ -72,10 +59,7 @@ int restore_blob(const char *blob_hash, const char *filename) {
     size_t bytes;
 
     while ((bytes = fread(buffer, 1, sizeof(buffer), obj)) > 0) {
-        fwrite(buffer,
-               1,
-               bytes,
-               out);
+        fwrite(buffer, 1, bytes, out);
     }
 
     fclose(obj);
@@ -95,39 +79,20 @@ void checkout_command(char **args, int count) {
 
     char blob_hash[41];
 
-    if (!find_file_in_commit(
-            commit_hash,
-            filename,
-            blob_hash)) {
-
+    if (!find_file_in_commit(commit_hash, filename, blob_hash)) {
         printf("file not found in commit\n");
         return;
     }
-
     // deleted file
-    if (strcmp(blob_hash,
-               "0000000000000000000000000000000000000000") == 0) {
-
-        printf(
-            "file deleted in this commit\n"
-        );
-
+    if (strcmp(blob_hash, "0000000000000000000000000000000000000000") == 0) {
+        printf("file deleted in this commit\n" );
         return;
     }
 
-    if (!restore_blob(blob_hash,
-                      filename)) {
-
-        printf(
-            "cannot restore file\n"
-        );
-
+    if (!restore_blob(blob_hash, filename)) {
+        printf("cannot restore file\n");
         return;
     }
 
-    printf(
-        "Restored %s from %s\n",
-        filename,
-        commit_hash
-    );
+    printf("Restored %s from %s\n", filename, commit_hash);
 }
