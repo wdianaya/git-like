@@ -9,7 +9,7 @@ char* get_head_commit();
 void save_commit_object(const char *hash, const char *content);
 
 // обновить branch
-void update_branch_head(const char *hash);
+void update_current_branch(const char *hash);
 
 // очистить index
 void clear_index();

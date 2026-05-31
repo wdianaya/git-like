@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "commit.h"
+#include "branch.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -48,4 +49,9 @@ void init_repository() {
     printf("\n");
 
     create_initial_commit();
+    char *initial_commit = get_head_commit();
+    if (initial_commit) {
+        update_branch_head("master", initial_commit);
+        free(initial_commit);
+    }
 }

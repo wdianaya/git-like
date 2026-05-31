@@ -8,6 +8,7 @@
 #include "utils.h"
 #include "object.h"
 #include "sha1.h"
+#include "branch.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -86,37 +87,13 @@ void save_commit_object(const char *hash, const char *content) {
     fclose(obj);
 }
 
-// обновить branch
-void update_branch_head(const char *hash) {
-    FILE *head = fopen(".mygit/HEAD", "r");
-    
-    if (!head) {
-        return;
+// обновить текущую ветку (ту, на которую указывает HEAD)
+void update_current_branch(const char *hash) {
+    char *branch_name = get_current_branch_name();
+    if (branch_name) {
+        update_branch_head(branch_name, hash);
+        free(branch_name);
     }
-
-    char ref_line[256];
-    fgets(ref_line, sizeof(ref_line), head);
-    fclose(head);
-
-    ref_line[strcspn(ref_line, "\n")] = '\0';
-
-    char ref_path[256];
-
-    sscanf(ref_line, "ref: %s", ref_path);
-
-    char full_ref[512];
-
-    sprintf(full_ref, ".mygit/%s", ref_path);
-
-    FILE *ref_file = fopen(full_ref, "w");
-
-    if (!ref_file) {
-        return;
-    }
-
-    fprintf(ref_file, "%s", hash);
-
-    fclose(ref_file);
 }
 
 // очистить index
@@ -203,7 +180,7 @@ void commit_command(char **args, int count) {
     save_commit_object(commit_hash, commit_content);
 
     // обновляем branch
-    update_branch_head(commit_hash);
+    update_current_branch(commit_hash);
 
     // очищаем index
     clear_index();
@@ -245,8 +222,8 @@ void create_initial_commit() {
     );
 
     save_commit_object(commit_hash, commit_content);
-    
-    update_branch_head(commit_hash);
+    update_current_branch(commit_hash);
+    // update_branch_head(commit_hash);
 
     printf("Initial commit: %s\n", commit_hash);
 }

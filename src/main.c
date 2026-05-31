@@ -12,6 +12,7 @@
 #include "status.h"
 #include "diff.h"
 #include "checkout.h"
+#include "branch.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
@@ -87,6 +88,10 @@ int main() {
             checkout_command(args, count_args);
         }
 
+        else if (strcmp(command, "branch") == 0) {
+            branch_command(args, count_args);
+        }
+
         else {
             fprintf(stderr, "Unknown command\n");
         }
@@ -117,5 +122,6 @@ void show_help() {
     printf("  diff           Show changes between commits\n");
     printf("  status         Show the working tree status\n");
     printf("  checkout [hash] [filename] Insert the contents of the specified file\n");
+    printf("  branch [name]   List branches or create new branch\n");
     printf("  exit           Exit the program\n\n");
 }
