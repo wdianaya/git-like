@@ -19,6 +19,7 @@ int find_file_in_commit(const char *commit_hash, const char *filename, char *blo
     char line[1024];
 
     while (fgets(line, sizeof(line), f)) {
+        
         char status[2];
         char file[512];
         char hash[41];

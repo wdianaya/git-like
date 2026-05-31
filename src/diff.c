@@ -23,7 +23,6 @@ int load_commit_files(const char *hash, FileEntry files[], int max_files) {
     build_object_path(hash, path);
 
     FILE *f = fopen(path, "r");
-
     if (!f) return 0;
 
     char line[1024];

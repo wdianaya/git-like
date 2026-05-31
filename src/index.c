@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <stdbool.h>            
 
 #include "utils.h"
 #include "object.h"
@@ -94,6 +94,7 @@ void add_file(char *real_path, char *repo_path) {
     if (file_in_index(repo_path)) {
         index_update("M", repo_path, hash);
     }
+    
     else {
         index_update("A", repo_path, hash);
     }

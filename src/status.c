@@ -22,17 +22,11 @@ void status_command() {
     int empty = 1;
 
     while (fgets(line, sizeof(line), index)) {
-
         char status[2];
         char filename[512];
         char hash[41];
 
-        sscanf(line,
-               "%1s %511s %40s",
-               status,
-               filename,
-               hash);
-
+        sscanf(line, "%1s %511s %40s", status, filename, hash);
         empty = 0;
 
         if (strcmp(status, "A") == 0) {
