@@ -24,7 +24,6 @@ char* get_current_branch_name() {
 
     char *prefix = "ref: refs/heads/";
     if (strncmp(ref_line, prefix, strlen(prefix)) != 0) {
-        // detached HEAD state
         return NULL;
     }
 
@@ -130,10 +129,10 @@ void branch_command(char **args, int count) {
     }
 
     if (count == 0) {
-        // без аргументов — вывести список
+        // без аргументов - вывести список
         list_branches();
     } else if (count == 1) {
-        // с аргументом — создать ветку
+        // с аргументом - создать ветку
         create_branch(args[0]);
     } else {
         fprintf(stderr, "please write one argument after <branch>\n");

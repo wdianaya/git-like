@@ -7,24 +7,17 @@
 
 int find_file_in_commit(const char *commit_hash, const char *filename, char *blob_hash) {
     char path[512];
-
     sprintf(path, ".mygit/objects/%.2s/%s", commit_hash, commit_hash + 2);
-
     FILE *f = fopen(path, "r");
 
     if (!f) {
         return 0;
     }
-
     char line[1024];
-
-    while (fgets(line, sizeof(line), f)) {
-        
+    while (fgets(line, sizeof(line), f)) {  
         char status[2];
         char file[512];
         char hash[41];
-
-        // пытаемся прочитать file entry
         if (sscanf(line, "%1s %511s %40s", status, file, hash) == 3) {
             if (strcmp(file, filename) == 0) {
                 strcpy(blob_hash, hash);
@@ -42,13 +35,10 @@ int restore_blob(const char *blob_hash, const char *filename) {
     char obj_path[512];
 
     sprintf(obj_path, ".mygit/objects/%.2s/%s", blob_hash, blob_hash + 2);
-
     FILE *obj = fopen(obj_path, "rb");
-
     if (!obj) {
         return 0;
     }
-
     FILE *out = fopen(filename, "wb");
 
     if (!out) {
