@@ -1,102 +1,199 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <dirent.h>
 
 #include "status.h"
-#include "utils.h"
 #include "commit.h"
 #include "object.h"
+#include "utils.h"
+#include "sha1.h"
 
-#ifdef _WIN32
-    #define PATH_SEPARATOR '\\'
-#else
-    #define PATH_SEPARATOR '/'
-#endif
+#define MAX_PATH 1024
 
 // вспомогательная функция для проверки, есть ли файл в индексе
 static int file_in_index(const char *filename) {
     FILE *index = fopen(".mygit/index", "r");
-    if (!index) return 0;
-    
-    char line[1024];
-    int found = 0;
-    while (fgets(line, sizeof(line), index)) {
-        char status[3];
-        char file[512];
-        char hash[41];
-        if (sscanf(line, "%2s %511s %40s", status, file, hash) == 3) {
-            if (strcmp(file, filename) == 0) {
-                found = 1;
-                break;
-            }
-        }
+
+    if (!index) {
+        return 0;
     }
-    fclose(index);
-    return found;
-}
+    char line[1024];
+    char status[2];
+    char file[512];
+    char hash[41];
 
-// получить текущую рабочую директорию 
-char* get_current_working_dir() {
-    char *path = NULL;
-    get_repo_path(".", &path);
-    return path;
-}
-
-// рекурсивный обход для status
-void check_directory_for_status(const char *dir_path, const char *repo_prefix) {
-    DIR *dir = opendir(dir_path);
-    if (!dir) return;
-    
-    struct dirent *entry;
-    while ((entry = readdir(dir)) != NULL) {
-        // пропускаем . и ..
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
+    while (fgets(line, sizeof(line), index)) {
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) {
             continue;
         }
-        
-        // пропускаем скрытые файлы
+        if (strcmp(file, filename) == 0) {
+            fclose(index);
+            return 1;
+        }
+    }
+
+    fclose(index);
+    return 0;
+}
+
+// xеш без создания blob
+char* compute_file_hash(const char *path) {
+    FILE *f = fopen(path, "rb");
+    if (!f) {
+        return NULL;
+    }
+    SHA_CTX ctx;
+    sha1_ctx_init(&ctx);
+
+    unsigned char buffer[65536];
+    size_t bytes;
+
+    while ((bytes = fread(buffer,1,sizeof(buffer),f)) > 0) {
+        sha1_ctx_update(&ctx, buffer, bytes);
+    }
+
+    fclose(f);
+    char *hash = malloc(41);
+    sha1_ctx_final(&ctx, hash);
+
+    return hash;
+}
+
+// Вывод staged файлов
+void print_index_changes() {
+    FILE *index = fopen(".mygit/index","r");
+    if (!index) {
+        return;
+    }
+    char line[1024];
+    int empty = 1;
+
+    printf("Changes to be committed:\n");
+    while (fgets(line,sizeof(line),index)) {
+        char status[2];
+        char file[512];
+        char hash[41];
+
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) {
+            continue;
+        }
+        empty = 0;
+        if (strcmp(status,"A") == 0) {
+            printf("    new file: %s\n", file);
+        }
+
+        else if (strcmp(status,"M") == 0) {
+            printf("    modified: %s\n", file);
+        }
+
+        else if (strcmp(status,"D") == 0) {
+            printf("    deleted: %s\n", file);
+        }
+    }
+    if (empty) {
+        printf("    nothing to commit\n");
+    }
+    fclose(index);
+}
+
+// Поиск modified и deleted
+void check_commit_files() {
+    char *head = get_head_commit();
+    if (!head) {
+        return;
+    }
+    char path[MAX_PATH];
+    build_object_path(head, path);
+    FILE *commit = fopen(path,"r");
+
+    free(head);
+    if (!commit) {
+        return;
+    }
+
+    printf("\nChanges not staged for commit:\n");
+    char line[1024];
+
+    while (fgets(line,sizeof(line),commit)) {
+
+        char status[2];
+        char file[512];
+        char hash[41];
+
+        if (strncmp(line, "parent:", 7) == 0 || strncmp(line, "date:", 5) == 0 || strncmp(line, "message:", 8) == 0 || line[0] == '\n') {
+            continue;
+        }
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) {
+            continue;
+        }
+
+        if (strcmp(status,"D") == 0) {
+            continue;
+        }
+
+        if (file_in_index(file)) {
+            continue;
+        }
+
+        if (!file_exists(file)) {
+            printf("    deleted: %s\n", file);
+            continue;
+        }
+        char *current_hash = compute_file_hash(file);
+        if (!current_hash) {
+            continue;
+        }
+        if (strcmp(current_hash, hash) != 0) {
+            printf("    modified: %s\n", file);
+        }
+
+        free(current_hash);
+    }
+
+    fclose(commit);
+}
+
+// поиск новых файлов
+void find_untracked(const char *dir) {
+    DIR *d = opendir(dir);
+    if (!d) {
+        return;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(d)) != NULL) {
+        if (strcmp(entry->d_name,".") == 0 || strcmp(entry->d_name,"..") == 0) {
+            continue;
+        }
+
+        if (strcmp(entry->d_name,".mygit") == 0) {
+            continue;
+        }
+
         if (entry->d_name[0] == '.') {
             continue;
         }
-        
-        char full_path[1024];
-        char repo_path[1024];
-        
-        // строим полный путь 
-        snprintf(full_path, sizeof(full_path), "%s%c%s", dir_path, PATH_SEPARATOR, entry->d_name);
-        
-        // строим путь относительно репозитория
-        if (strcmp(repo_prefix, ".") == 0) {
-            snprintf(repo_path, sizeof(repo_path), "%s", entry->d_name);
+        char path[MAX_PATH];
+        if (strlen(dir) == 0) {
+            snprintf(path,sizeof(path),"%s",entry->d_name);
         } else {
-            snprintf(repo_path, sizeof(repo_path), "%s%c%s", repo_prefix, PATH_SEPARATOR, entry->d_name);
+            snprintf(path,sizeof(path),"%s/%s",dir,entry->d_name);
         }
-        
-        if (file_exists(full_path)) {
-            // получаем статус файла
-            char *last_hash = get_last_commit_hash(repo_path);
-            char *current_hash = create_blob(full_path);
             
-            int in_index = file_in_index(repo_path);
-            
-            if (!last_hash && current_hash && !in_index) {
-                printf("  untracked: %s\n", repo_path);
-            } else if (last_hash && current_hash && strcmp(last_hash, current_hash) != 0 && !in_index) {
-                printf("  modified: %s (not staged)\n", repo_path);
-            }
-            
-            if (last_hash) free(last_hash);
-            if (current_hash) free(current_hash);
-            
-        } else if (directory_exists(full_path)) {
-            // пропускаем .mygit директорию
-            if (strcmp(entry->d_name, ".mygit") != 0) {
-                check_directory_for_status(full_path, repo_path);
+
+
+        if (directory_exists(path)) {
+            find_untracked(path);
+        }
+
+        else if (file_exists(path)) {
+            if (!get_last_commit_hash(path) && !file_in_index(path)) {
+                printf("    untracked: %s\n", path);
             }
         }
     }
-    closedir(dir);
+
+    closedir(d);
 }
 
 void status_command() {
@@ -104,52 +201,8 @@ void status_command() {
         fprintf(stderr, "repository not initialized\n");
         return;
     }
-    
-    printf("\nChanges to be committed:\n");
-    
-    FILE *index = fopen(".mygit/index", "r");
-    if (!index) {
-        fprintf(stderr, "cannot open index\n");
-        return;
-    }
-    
-    char line[1024];
-    int empty = 1;
-    
-    while (fgets(line, sizeof(line), index)) {
-        char status[3];
-        char filename[512];
-        char hash[41];
-        
-        if (sscanf(line, "%2s %511s %40s", status, filename, hash) == 3) {
-            empty = 0;
-            
-            if (strcmp(status, "A") == 0) {
-                printf("  new file: %s\n", filename);
-            } else if (strcmp(status, "D") == 0) {
-                printf("  deleted: %s\n", filename);
-            } else if (strcmp(status, "M") == 0) {
-                printf("  modified: %s\n", filename);
-            }
-        }
-    }
-    
-    fclose(index);
-    
-    if (empty) {
-        printf("  (nothing to commit)\n");
-    }
-    
-    printf("\nChanges not staged for commit:\n");
-    
-    // используем get_repo_path вместо getcwd
-    char *cwd = get_current_working_dir();
-    if (cwd) {
-        check_directory_for_status(cwd, ".");
-        free(cwd);
-    } else {
-        printf("  (cannot determine working directory)\n");
-    }
-    
+    print_index_changes();
+    check_commit_files();
+    find_untracked("");
     printf("\n");
 }

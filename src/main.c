@@ -56,10 +56,6 @@ int main() {
             init_repository();
         }
 
-        else if (strcmp(command, "remove") == 0) {
-            remove_command(args, count_args);
-        }
-
         else if (strcmp(command, "exit") == 0) {
             break;
         }
@@ -116,7 +112,6 @@ void show_help() {
     printf("  init           Initialize a new repository in current directory\n");
     printf("  help           Show this help message\n");
     printf("  add            Add file contents to the index\n");
-    printf("  remove         Add file contents to the index\n");
     printf("  commit         Record changes to the repository\n");
     printf("  log [hash] [[--n] <number>]    Show commit logs\n");
     printf("  diff           Show changes between commits\n");
