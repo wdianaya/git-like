@@ -23,13 +23,11 @@ int read_commit(const char *hash, CommitInfo *commit) {
                    "parent: %40s",
                    commit->parent);
         }
-
         else if (strncmp(line, "date:", 5) == 0) {
             sscanf(line,
                    "date: %[^\n]",
                    commit->date);
         }
-
         else if (strncmp(line, "message:", 8) == 0) {
             sscanf(line,
                    "message: %[^\n]",

@@ -3,6 +3,7 @@
 
 #include "utils.h"
 #include "commit.h"
+#include "branch.h"
 
 #ifdef _WIN32
     #include <direct.h>
@@ -26,21 +27,22 @@ void init_repository() {
     MKDIR(".mygit/refs/heads");
 
     FILE* head = fopen(".mygit/HEAD", "w");
+    if (!head) { fprintf(stderr, "cannot create HEAD\n"); return; }
     fprintf(head, "ref: refs/heads/master\n");
     fclose(head);
 
     FILE *index = fopen(".mygit/index", "w");
-    fclose(index);
+    if (index) fclose(index);
 
     char dirname[] = ".mygit";
 
-    char* path;
+    char* path = NULL;
     get_repo_path(dirname, &path);
 
     fprintf(stderr, "Initialized empty Git repository in path:");
 
     if (path == NULL) {
-        fprintf(stderr, "[cannot find]");
+        printf("[current directory/.mygit]\n");
     } else {
         printf("[%s]", path);
         free(path);
@@ -48,4 +50,9 @@ void init_repository() {
     printf("\n");
 
     create_initial_commit();
+    char *initial_commit = get_head_commit();
+    if (initial_commit) {
+        update_branch_head("master", initial_commit);
+        free(initial_commit);
+    }
 }

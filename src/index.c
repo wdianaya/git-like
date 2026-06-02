@@ -2,9 +2,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <dirent.h>           
 
 #include "utils.h"
 #include "object.h"
+#include "commit.h"
 
 #define MAX_INPUT 1024
 #define MAX_ARGS 64
@@ -21,11 +23,11 @@ int file_in_index(const char *filename) {
     char hash[41];
 
     while (fgets(line, sizeof(line), index)) {
-        sscanf(line,"%1s %511s %40s", st, file, hash);
-
-        if (strcmp(file, filename) == 0) {
-            fclose(index);
-            return 1;
+        if (sscanf(line, "%1s %511s %40s", st, file, hash) == 3) {
+            if (strcmp(file, filename) == 0) {
+                fclose(index);
+                return 1;
+            }
         }
     }
 
@@ -76,106 +78,149 @@ void index_update(const char *status, const char *file_name, const char *hash) {
     rename(".mygit/index.tmp", ".mygit/index");
 }
 
-// create BLOB object from the content
-// update index to include the file
-void add_file(char *real_path, char *repo_path) {
-    if (!file_exists(real_path)) {
-        fprintf(stderr, "File %s not found\n", real_path);
+char *get_file_hash_from_head(const char *filename) {
+    char *commit_hash = get_head_commit();
+    if (!commit_hash) {
+        return NULL;
+    }
+    char commit_path[512];
+    build_object_path(commit_hash, commit_path);
+    FILE *f = fopen(commit_path, "r");
+    free(commit_hash);
+
+    if (!f) {
+        return NULL;
+    }
+
+    char line[1024];
+    while (fgets(line, sizeof(line), f)) {
+        char status[2];
+        char file[512];
+        char hash[41];
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) continue;
+        if (strcmp(file, filename) == 0) {
+            fclose(f);
+            char *result = (char*)malloc(41);
+            strcpy(result, hash);
+            return result;
+        }
+    }
+
+    fclose(f);
+    return NULL;
+}
+
+void stage_file(const char *real_path, const char *repo_path) {
+    char *old_hash = get_file_hash_from_head(repo_path);
+    char *new_hash = create_blob(real_path);
+
+    if (!new_hash) {
+        free(old_hash);
         return;
     }
 
-    char *hash = create_blob(real_path);
-
-    if (!hash) {
-        fprintf(stderr, "failed to add file :(\n");
-        return;
-    }
-
-    if (file_in_index(repo_path)) {
-        index_update("M", repo_path, hash);
+    if (!old_hash) {
+        index_update("A", repo_path, new_hash);
+        printf("added: %s\n", repo_path);
     }
     else {
-        index_update("A", repo_path, hash);
+        if (strcmp(old_hash, new_hash) != 0) {
+            index_update("M", repo_path, new_hash);
+            printf("modified: %s\n", repo_path);
+        }
     }
-
-    printf("Adding file: %s\n", repo_path);
-
-    free(hash);
+    free(old_hash);
+    free(new_hash);
 }
 
-// main func for add command
-void add_command(char **args, int n) {
-    if (!directory_exists(".mygit")) {
-        fprintf(stderr, "repo was not found\n");
+void add_directory(const char *real_dir, const char *repo_dir) {
+    DIR *dir = opendir(real_dir);
+    if (!dir) {
+        return;
+    }
+    struct dirent *entry;
+    while ((entry = readdir(dir))) {
+        if (strcmp(entry->d_name, ".") == 0 ||
+            strcmp(entry->d_name, "..") == 0) {
+            continue;
+        }
+        if (strcmp(entry->d_name, ".mygit") == 0) {
+            continue;
+        }
+        char full_path[1024];
+        char repo_path[1024];
+        snprintf(full_path, sizeof(full_path), "%s/%s", real_dir, entry->d_name);
+        snprintf(repo_path, sizeof(repo_path), "%s/%s", repo_dir, entry->d_name);
+
+        if (file_exists(full_path)) {
+            stage_file(full_path, repo_path);
+        }
+        else if (directory_exists(full_path)) {
+            add_directory(full_path, repo_path);
+        }
+    }
+    closedir(dir);
+}
+
+void detect_deleted_files(const char *prefix) {
+    char *commit_hash = get_head_commit();
+    if (!commit_hash) {
+        return;
+    }
+    char commit_path[512];
+    build_object_path(commit_hash, commit_path);
+    free(commit_hash);
+    FILE *f = fopen(commit_path, "r");
+    if (!f) {
         return;
     }
 
-    char* path;
-    get_repo_path(".", &path);
-    
-    for (int i =0; i < n; ++i) {
-        char name_arg[MAX_INPUT];
-        snprintf(name_arg, sizeof(name_arg), "%s", path);
-        // strcpy(name_arg, path);
-        strcat(name_arg, "/");
-        strcat(name_arg, args[i]);
+    char line[1024];
 
-        if (!path_exists(name_arg)) {
-            fprintf(stderr, "Path %s not found\n", name_arg);
-            return;
+    while (fgets(line, sizeof(line), f)) {
+        char status[2];
+        char file[512];
+        char hash[41];
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) {
+            continue;
         }
 
-        if (file_exists(name_arg)) {
-            add_file(name_arg, args[i]);
+        if (strlen(prefix) > 0 && strcmp(prefix, ".") != 0) {
+            if (strncmp(file, prefix, strlen(prefix)) != 0) continue;
         }
-        else if (directory_exists(name_arg)) {
-            // add_directory();
+
+        if (!file_exists(file)) {
+            index_update("D", file, "0000000000000000000000000000000000000000");
+            printf("removed: %s\n", file);
         }
     }
-
-    free(path);
+    fclose(f);
 }
 
-// пометить файл удаленным
-void remove_file(char *repo_path) {
-    index_update(
-        "D",
-        repo_path,
-        "0000000000000000000000000000000000000000"
-    );
-
-    printf("Removing file: %s\n", repo_path);
-}
-
-// main func for remove
-void remove_command(char **args, int count) {
+void add_command(char **args, int count) {
     if (!directory_exists(".mygit")) {
-        fprintf(stderr, "repo was not found\n");
+        fprintf(stderr, "repo not found\n");
         return;
     }
 
-    char* path;
-    get_repo_path(".", &path);
+    if (is_detached_head()) {
+        fprintf(stderr, "cannot add: HEAD is detached\n");
+        return;
+    }
     
-    for (int i =0; i < count; ++i) {
-        char name_arg[MAX_INPUT];
-        snprintf(name_arg, sizeof(name_arg), "%s", path);
-        // strcpy(name_arg, path);
-        strcat(name_arg, "/");
-        strcat(name_arg, args[i]);
-
-        if (!path_exists(name_arg)) {
-            fprintf(stderr, "Path %s not found\n", name_arg);
-            return;
+    for (int i = 0;i < count;i++) {
+        if (!path_exists(args[i])) {
+            fprintf(stderr, "path %s not found\n",args[i]);
+            continue;
         }
 
-        if (file_exists(name_arg)) {
-            remove_file(args[i]);
+        if (file_exists(args[i])) {
+            stage_file(args[i], args[i]);
         }
-        else if (directory_exists(name_arg)) {
-            
+
+        else if (directory_exists(args[i])) {
+            add_directory(args[i], args[i]);
+            detect_deleted_files(args[i]);
         }
     }
-
-    free(path);
 }

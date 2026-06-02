@@ -9,6 +9,7 @@
 
 void compute_sha1(const unsigned char *data, size_t len, char hash_hex[41]) {
     unsigned char hash[LEN_SHA];
+
     SHA1(data, len, hash);
     // преобразуем бинарный хеш в hex строку
     for (int i = 0; i < LEN_SHA; i++) {
@@ -20,6 +21,7 @@ void compute_sha1(const unsigned char *data, size_t len, char hash_hex[41]) {
 // Инициализация контекста для потокового хеширования
 void sha1_ctx_init(SHA_CTX *ctx) {
     SHA1_Init(ctx);
+    
 }
 
 // Добавление порции данных

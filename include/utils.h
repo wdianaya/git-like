@@ -18,4 +18,9 @@ void get_repo_path(char *name, char **path);
 // Записывает путь по хэшу
 void build_object_path(const char *hash, char *path);
 
+// Определяет branch or commit
+char* resolve_commit(const char *name);
+
+// Вернет 1 если detached HEAD
+int is_detached_head(void);
 #endif
