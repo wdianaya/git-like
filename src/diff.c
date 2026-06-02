@@ -66,8 +66,12 @@ static void print_line_diff(const char *hash1, const char *hash2) {
         for (int j = 1; j <= m; j++)
             dp[i][j] = (strcmp(a.lines[i- 1], b.lines[j -1]) == 0) ? dp[i-1][j-1] + 1 : (dp[i-1][j] > dp[i][j-1] ? dp[i-1][j] : dp[i][j-1]);
 
-    typedef struct { int type; int idx; } DiffLine; // type: 0=common, 1=del, 2=add 
+    typedef struct {
+        int type;
+        int idx;
+    } DiffLine; // type: 0= common, 1 =del, 2=add 
     DiffLine *diff = (DiffLine*)malloc((n + m + 1) * sizeof(DiffLine));
+    
     int dcount = 0;
 
     int i = n, j = m;
@@ -207,7 +211,7 @@ void diff_command(char **args, int count) {
     } else {
         hash_b = get_head_commit();
         if (!hash_b) {
-            
+
             fprintf(stderr, "no commits yet\n");
             free(hash_a);
             return;
