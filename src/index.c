@@ -23,11 +23,11 @@ int file_in_index(const char *filename) {
     char hash[41];
 
     while (fgets(line, sizeof(line), index)) {
-        sscanf(line,"%1s %511s %40s", st, file, hash);
-
-        if (strcmp(file, filename) == 0) {
-            fclose(index);
-            return 1;
+        if (sscanf(line, "%1s %511s %40s", st, file, hash) == 3) {
+            if (strcmp(file, filename) == 0) {
+                fclose(index);
+                return 1;
+            }
         }
     }
 
@@ -93,19 +93,14 @@ char *get_file_hash_from_head(const char *filename) {
     }
 
     char line[1024];
-
     while (fgets(line, sizeof(line), f)) {
         char status[2];
         char file[512];
         char hash[41];
-
-        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) {
-            continue;
-        }
-
+        if (sscanf(line, "%1s %511s %40s", status, file, hash) != 3) continue;
         if (strcmp(file, filename) == 0) {
             fclose(f);
-            char *result = (char*)malloc(41 * sizeof(char));
+            char *result = (char*)malloc(41);
             strcpy(result, hash);
             return result;
         }
@@ -120,6 +115,7 @@ void stage_file(const char *real_path, const char *repo_path) {
     char *new_hash = create_blob(real_path);
 
     if (!new_hash) {
+        free(old_hash);
         return;
     }
 
@@ -189,8 +185,8 @@ void detect_deleted_files(const char *prefix) {
             continue;
         }
 
-        if (strncmp(file, prefix, strlen(prefix)) != 0) {
-            continue;
+        if (strlen(prefix) > 0 && strcmp(prefix, ".") != 0) {
+            if (strncmp(file, prefix, strlen(prefix)) != 0) continue;
         }
 
         if (!file_exists(file)) {
@@ -206,6 +202,12 @@ void add_command(char **args, int count) {
         fprintf(stderr, "repo not found\n");
         return;
     }
+
+    if (is_detached_head()) {
+        fprintf(stderr, "cannot add: HEAD is detached\n");
+        return;
+    }
+    
     for (int i = 0;i < count;i++) {
         if (!path_exists(args[i])) {
             fprintf(stderr, "path %s not found\n",args[i]);

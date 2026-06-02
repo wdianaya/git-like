@@ -17,18 +17,22 @@ char* get_current_branch_name() {
     }
 
     char ref_line[256];
-    fgets(ref_line, sizeof(ref_line), head);
+    if (fgets(ref_line, sizeof(ref_line), head) == NULL) {
+        fclose(head);
+        return NULL;
+    }
     fclose(head);
 
     ref_line[strcspn(ref_line, "\n")] = '\0';
 
     char *prefix = "ref: refs/heads/";
     if (strncmp(ref_line, prefix, strlen(prefix)) != 0) {
-        return NULL;
+        return NULL; // detached Head
     }
 
     char *branch_name = (char*)malloc(256 * sizeof(char));
     strncpy(branch_name, ref_line + strlen(prefix), 256);
+    branch_name[255] = '\0';
     return branch_name;
 }
 
@@ -57,8 +61,7 @@ char* get_branch_commit(const char *branch_name) {
 // обновить ветку на указанный коммит
 void update_branch_head(const char *branch_name, const char *commit_hash) {
     char branch_path[512];
-    snprintf(branch_path, sizeof(branch_path), ".mygit/refs/heads/%s", branch_name);
-
+    snprintf(branch_path, sizeof(branch_path), "%s/%s", BRANCHES_DIR, branch_name);
     FILE *f = fopen(branch_path, "w");
     if (!f) {
         fprintf(stderr, "cannot update branch %s\n", branch_name);
@@ -135,6 +138,6 @@ void branch_command(char **args, int count) {
         // с аргументом - создать ветку
         create_branch(args[0]);
     } else {
-        fprintf(stderr, "please write one argument after <branch>\n");
+        fprintf(stderr, "pleusage: branch [name]\n");
     }
 }

@@ -24,39 +24,42 @@
 // получить hash текущего commit 
 char* get_head_commit() {
     FILE *head = fopen(".mygit/HEAD", "r");
-    if (!head) {
-        return NULL;
-    }
+    if (!head) return NULL;
+
     char ref_line[256];
-    fgets(ref_line, sizeof(ref_line), head);
+    if (fgets(ref_line, sizeof(ref_line), head) == NULL) {
+        fclose(head);
+        return NULL;
+    }
     fclose(head);
-
     ref_line[strcspn(ref_line, "\n")] = '\0';
-    char ref_path[256];
 
-    sscanf(ref_line, "ref: %s", ref_path);
+    if (strncmp(ref_line, "ref:", 4) == 0) {
+        char ref_path[256];
 
-    char full_ref[512];
-    sprintf(full_ref, ".mygit/%s", ref_path);
+        sscanf(ref_line, "ref: %255s", ref_path);
+        char full_ref[512];
+        snprintf(full_ref, sizeof(full_ref), ".mygit/%s", ref_path);
 
-    FILE *ref_file = fopen(full_ref, "r");
+        FILE *ref_file = fopen(full_ref, "r");
+        if (!ref_file) return NULL;
+        char *hash = (char*)malloc(41);
+        if (fgets(hash, 41, ref_file) == NULL) {
+            free(hash);
+            
+            fclose(ref_file);
+            return NULL;
+        }
 
-    if (!ref_file) {
-        return NULL;
-    }
-
-    char* hash = (char*)malloc(41);
-
-    if (fgets(hash, 41, ref_file) == NULL) {
-        free(hash);
+        hash[strcspn(hash, "\n")] = '\0';
         fclose(ref_file);
+        return hash;
+    } else {
+        if (strlen(ref_line) == 40) {
+            return strdup(ref_line);
+        }
         return NULL;
     }
-
-    hash[strcspn(hash, "\n")] = '\0';
-
-    fclose(ref_file);
-    return hash;
 }
 
 // сохранить commit object
@@ -70,10 +73,7 @@ void save_commit_object(const char *hash, const char *content) {
 
     char obj_path[512];
 
-    sprintf(obj_path,
-            ".mygit/objects/%.2s/%s",
-            hash,
-            hash + 2);
+    snprintf(obj_path, sizeof(obj_path), ".mygit/objects/%.2s/%s", hash, hash + 2);
 
     FILE *obj = fopen(obj_path, "w");
 
@@ -107,6 +107,11 @@ void clear_index() {
 void commit_command(char **args, int count) {
     if (!directory_exists(".mygit")) {
         fprintf(stderr, "repository not initialized\n");
+        return;
+    }
+
+    if (is_detached_head()) {
+        fprintf(stderr, "cannot commit: HEAD is detached\n");
         return;
     }
 
@@ -151,21 +156,13 @@ void commit_command(char **args, int count) {
     struct tm *tm_info = localtime(&now);
 
     char date[64];
-
-    strftime(date, sizeof(date),
-             "%Y-%m-%d %H:%M:%S",
-             tm_info);
+    strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S", tm_info);
 
     // формируем commit content
     char commit_content[MAX_COMMIT_SIZE];
 
-    snprintf(commit_content,
-             sizeof(commit_content),
-             "parent: %s\n"
-             "date: %s\n"
-             "message: %s\n"
-             "\n"
-             "%s",
+    snprintf(commit_content, sizeof(commit_content),
+             "parent: %s\ndate: %s\nmessage: %s\n\n%s",
              parent_hash ? parent_hash : "NULL",
              date,
              message,
@@ -178,7 +175,6 @@ void commit_command(char **args, int count) {
 
     // сохраняем object
     save_commit_object(commit_hash, commit_content);
-
     // обновляем branch
     update_current_branch(commit_hash);
 
@@ -194,36 +190,19 @@ void commit_command(char **args, int count) {
 
 void create_initial_commit() {
     time_t now = time(NULL);
-
     struct tm *tm_info = localtime(&now);
 
     char date[64];
-
-    strftime(date,
-             sizeof(date),
-             "%Y-%m-%d %H:%M:%S",
-             tm_info);
+    strftime(date, sizeof(date), "%Y-%m-%d %H:%M:%S", tm_info);
 
     char commit_content[1024];
-
-    snprintf(commit_content,
-             sizeof(commit_content),
-             "parent: NULL\n"
-             "date: %s\n"
-             "message: initial commit\n",
-             date);
+    snprintf(commit_content, sizeof(commit_content),"parent: NULL\ndate: %s\nmessage: initial commit\n", date);
 
     char commit_hash[41];
-
-    compute_sha1(
-        (unsigned char*)commit_content,
-        strlen(commit_content),
-        commit_hash
-    );
+    compute_sha1((unsigned char*)commit_content, strlen(commit_content), commit_hash);
 
     save_commit_object(commit_hash, commit_content);
     update_current_branch(commit_hash);
-    // update_branch_head(commit_hash);
 
     printf("Initial commit: %s\n", commit_hash);
 }
@@ -242,7 +221,7 @@ char* get_last_commit_hash(const char *filename) {
         free(current_commit);
         return NULL;
     }
-
+    free(current_commit);
     char line[1024];
     char *hash = NULL;
     
@@ -268,7 +247,7 @@ char* get_last_commit_hash(const char *filename) {
     }
     
     fclose(f);
-    free(current_commit);
+    
     
     if (hash && strcmp(hash, "0000000000000000000000000000000000000000") == 0) {
         free(hash);

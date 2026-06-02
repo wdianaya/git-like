@@ -1,19 +1,19 @@
 #ifndef COMMIT_H
 #define COMMIT_H
 
-void commit_command(char **args, int count);
-void create_initial_commit();
-char* get_head_commit();
+typedef struct {
+    char hash[41];
+    char parent[41];
+    char date[64];
+    char message[512];
+} CommitInfo;
 
-// сохранить commit object
+char* get_head_commit(void);
 void save_commit_object(const char *hash, const char *content);
-
-// обновить branch
 void update_current_branch(const char *hash);
-
-// очистить index
-void clear_index();
-
+void clear_index(void);
+void commit_command(char **args, int count);
+void create_initial_commit(void);
 char* get_last_commit_hash(const char *filename);
 
 #endif

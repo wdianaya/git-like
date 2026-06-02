@@ -27,21 +27,22 @@ void init_repository() {
     MKDIR(".mygit/refs/heads");
 
     FILE* head = fopen(".mygit/HEAD", "w");
+    if (!head) { fprintf(stderr, "cannot create HEAD\n"); return; }
     fprintf(head, "ref: refs/heads/master\n");
     fclose(head);
 
     FILE *index = fopen(".mygit/index", "w");
-    fclose(index);
+    if (index) fclose(index);
 
     char dirname[] = ".mygit";
 
-    char* path;
+    char* path = NULL;
     get_repo_path(dirname, &path);
 
     fprintf(stderr, "Initialized empty Git repository in path:");
 
     if (path == NULL) {
-        fprintf(stderr, "[cannot find]");
+        printf("[current directory/.mygit]\n");
     } else {
         printf("[%s]", path);
         free(path);
