@@ -35,3 +35,8 @@ void get_repo_path(char *name, char **path) {
 void build_object_path(const char *hash, char *path) {
     sprintf(path, ".mygit/objects/%.2s/%s", hash, hash + 2);
 }
+
+void play() {
+    printf("12\n");
+    return;
+}
