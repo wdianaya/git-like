@@ -1,5 +1,6 @@
 .vscode/
 .mygit
+.mygit1
 build/
 *.o
 *.a
