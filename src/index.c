@@ -144,6 +144,9 @@ void add_directory(const char *real_dir, const char *repo_dir) {
             strcmp(entry->d_name, "..") == 0) {
             continue;
         }
+        if (entry->d_name[0] == '.') {
+            continue;
+        }
         if (strcmp(entry->d_name, ".mygit") == 0) {
             continue;
         }
@@ -177,7 +180,10 @@ void detect_deleted_files(const char *prefix) {
 
     char line[1024];
 
-    while (fgets(line, sizeof(line), f)) {
+    while (fgets(line, sizeof(line), f)) {  
+        if (strncmp(line, "parent:", 7) == 0 || strncmp(line, "date:", 5) == 0 || strncmp(line, "message:", 8) == 0 || line[0] == '\n') {
+            continue;
+        }
         char status[2];
         char file[512];
         char hash[41];
@@ -208,7 +214,7 @@ void add_command(char **args, int count) {
         return;
     }
     
-    for (int i = 0;i < count;i++) {
+    for (int i = 0;i < count; i++) {
         if (!path_exists(args[i])) {
             fprintf(stderr, "path %s not found\n",args[i]);
             continue;
