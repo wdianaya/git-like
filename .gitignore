@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 .vscode/
 .mygit
 build/
@@ -7,14 +6,3 @@ build/
 *.so
 app
 file.txt
-=======
-.vscode/
-.mygit
-.mygit1
-build/
-*.o
-*.a
-*.so
-app
-file.txt
->>>>>>> branch-commit
