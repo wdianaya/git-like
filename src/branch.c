@@ -138,6 +138,6 @@ void branch_command(char **args, int count) {
         // с аргументом - создать ветку
         create_branch(args[0]);
     } else {
-        fprintf(stderr, "pleusage: branch [name]\n");
+        fprintf(stderr, "usage: branch [name]\n");
     }
 }
