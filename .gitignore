@@ -1,0 +1,7 @@
+.vscode/
+.mygit
+build/
+*.o
+*.a
+*.so
+app
